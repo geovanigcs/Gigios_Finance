@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 222 47% 11%;
+  --card-foreground: 0 0% 100%;
+  --popover: 0 0% 5%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217 91% 15%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 217 91% 15%;
+  --muted-foreground: 0 0% 60%;
+  --accent: 217 91% 60%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 217 91% 15%;
+  --input: 217 91% 15%;
+  --ring: 217 91% 60%;
+  --radius: 0.75rem;
+}
+
+body {
+  @apply bg-black text-white antialiased;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-blue-600/50 rounded-full hover:bg-blue-600;
+}
+
+/* Animações */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Cards com glassmorphism */
+.glass-card {
+  @apply bg-gray-900/60 backdrop-blur-lg border border-gray-800/50;
+}
+
+/* Gradientes */
+.gradient-blue {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+}
+
+.gradient-dark {
+  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .container {
+    @apply px-4;
+  }
+}
+
