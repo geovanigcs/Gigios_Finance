@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "Finance.ai - Gestão Financeira Inteligente",
+  title: "Gigio's Finance",
   description: "Plataforma de gestão financeira com inteligência artificial"
 }
 

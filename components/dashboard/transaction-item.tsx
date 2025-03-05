@@ -23,7 +23,7 @@ export function TransactionItem({ title, amount, type, date, method, category, i
   const getTypeIcon = () => {
     switch (type) {
       case "deposit":
-        return <ArrowUpRight className="h-4 w-4 text-blue-500" />
+        return <ArrowUpRight className="h-4 w-4 text-green-500" />
       case "withdrawal":
         return <ArrowDownRight className="h-4 w-4 text-red-500" />
       case "investment":
@@ -46,7 +46,7 @@ export function TransactionItem({ title, amount, type, date, method, category, i
           <span
             className={cn(
               "text-sm font-medium",
-              type === "deposit" && "text-blue-500",
+              type === "deposit" && "text-green-500",
               type === "withdrawal" && "text-red-500",
               type === "investment" && investmentType === "international"
                 ? "text-indigo-500"

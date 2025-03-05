@@ -60,7 +60,7 @@ export function RecentTransactions() {
   const getTypeColor = (type: string) => {
     switch (type) {
       case "income":
-        return "text-blue-500" // Changed from text-green-500
+        return "text-green-500"
       case "expense":
         return "text-red-500"
       case "investment":
@@ -73,7 +73,7 @@ export function RecentTransactions() {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "income":
-        return <ArrowUpRight className="h-4 w-4 text-blue-500" /> // Changed from text-green-500
+        return <ArrowUpRight className="h-4 w-4 text-green-500" />
       case "expense":
         return <ArrowDownRight className="h-4 w-4 text-red-500" />
       case "investment":

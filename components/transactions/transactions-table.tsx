@@ -13,7 +13,7 @@ const transactions = [
     id: "1",
     name: "Salário",
     type: "income",
-    category: null,
+    category: 'Trabalho',
     method: "PIX",
     date: "28 de Março 2023",
     amount: 1750,
@@ -40,7 +40,7 @@ const transactions = [
     id: "4",
     name: "Bitcoin",
     type: "investment",
-    category: null,
+    category: "Dividendo",
     investmentType: "crypto",
     method: "PIX",
     date: "28 de Março 2023",
@@ -50,7 +50,7 @@ const transactions = [
     id: "5",
     name: "Freelancing",
     type: "income",
-    category: null,
+    category: "Trabalho",
     method: "Boleto",
     date: "28 de Março 2023",
     amount: 1750,
@@ -68,7 +68,7 @@ const transactions = [
     id: "7",
     name: "Ações PETR4",
     type: "investment",
-    category: null,
+    category: "Dividendo",
     investmentType: "national",
     method: "Transferência",
     date: "28 de Março 2023",
@@ -78,7 +78,7 @@ const transactions = [
     id: "8",
     name: "ETF S&P 500",
     type: "investment",
-    category: null,
+    category: "Dividendo",
     investmentType: "international",
     method: "Transferência",
     date: "28 de Março 2023",
@@ -102,7 +102,7 @@ export function TransactionsTable() {
   const getTypeLabel = (type: string, investmentType?: string) => {
     switch (type) {
       case "income":
-        return <Badge className="bg-blue-500/20 text-blue-500 hover:bg-blue-500/30">Ganho</Badge>
+        return <Badge className="bg-green-500/20 text-green-500 hover:bg-green-500/30">Ganho</Badge>
       case "expense":
         return <Badge className="bg-red-500/20 text-red-500 hover:bg-red-500/30">Gasto</Badge>
       case "investment":
@@ -155,7 +155,7 @@ export function TransactionsTable() {
                 <TableCell
                   className={`text-right ${
                     transaction.type === "income"
-                      ? "text-blue-500"
+                      ? "text-green-500"
                       : transaction.type === "expense"
                         ? "text-red-500"
                         : "text-gray-400"

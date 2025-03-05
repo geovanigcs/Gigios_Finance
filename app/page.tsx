@@ -9,7 +9,7 @@ export default function Home() {
       <div className="container mx-auto flex flex-1 flex-col items-center justify-center px-4 py-16 md:px-6 md:py-24 lg:px-8">
         <div className="flex items-center gap-2 text-3xl font-bold text-white">
           <Leaf className="h-8 w-8 text-blue-500" />
-          <span>finance.ai</span>
+          <span>Gigio's Finance</span>
         </div>
 
         <div className="mt-12 max-w-md text-center">

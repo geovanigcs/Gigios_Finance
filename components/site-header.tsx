@@ -8,7 +8,7 @@ export function SiteHeader() {
       <div className="container flex h-16 items-center">
         <div className="flex items-center mx-3 flex-row gap-2 text-xl font-bold text-white">
           <Leaf className="h-6 w-6 text-blue-500" />
-          <span>finance.ai</span>
+          <span>Gigio's Finance</span>
         </div>
         <nav className="flex-row flex max-w-7xl items-center justify-end gap-6 lg:px-8 test-sm font-medium">
           <Link href="/dashboard" className="transition-colors hover:text-blue-500">
