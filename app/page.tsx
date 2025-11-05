@@ -1,9 +1,38 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Leaf } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link"
+import { signIn, useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
 export default function Home() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      if (!session.user.onboardingCompleted) {
+        router.push("/onboarding")
+      } else {
+        router.push("/dashboard")
+      }
+    }
+  }, [status, session, router])
+
+  const handleGoogleSignIn = async () => {
+    await signIn("google", { callbackUrl: "/dashboard" })
+  }
+
+  if (status === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
       <div className="container mx-auto flex flex-1 flex-col items-center justify-center px-4 py-16 md:px-6 md:py-24 lg:px-8">
@@ -20,15 +49,10 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="mt-8 w-full max-w-md space-y-4">
-          <Button asChild className="w-full bg-gray-800 hover:bg-gray-700">
-            <Link href="/dashboard">
-              <Image src="/google-logo.svg" alt="Google" width={20} height={20} className="mr-2" />
-              Entrar com Google
-            </Link>
-          </Button>
-          <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
-            <Link href="/dashboard">Entrar sem login</Link>
+        <div className="mt-8 w-full max-w-md">
+          <Button onClick={handleGoogleSignIn} className="w-full bg-gray-800 hover:bg-gray-700">
+            <Image src="/google-logo.svg" alt="Google" width={20} height={20} className="mr-2" />
+            Entrar com Google
           </Button>
         </div>
       </div>

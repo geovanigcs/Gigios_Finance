@@ -10,8 +10,8 @@
     "db:seed": "node -r ts-node/register prisma/seed.ts"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
     "@hookform/resolvers": "^3.9.1",
-    "@prisma/client": "^6.4.1",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.4",
     "@radix-ui/react-aspect-ratio": "^1.1.1",
@@ -51,7 +51,7 @@
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
     "next": "^14.2.24",
-    "next-auth": "^4.24.11",
+    "next-auth": "^4.24.13",
     "next-themes": "^0.4.4",
     "react": "^18",
     "react-day-picker": "^9.5.1",
@@ -66,10 +66,12 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@prisma/client": "^6.19.0",
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "postcss": "^8",
+    "prisma": "^6.19.0",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "typescript": "^5"
