@@ -1,0 +1,150 @@
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        GIGIOS FINANCE - ARQUITETURA DOCKER              │
+└─────────────────────────────────────────────────────────────────────────┘
+
+                                    INTERNET
+                                       │
+                                       ▼
+                        ┌──────────────────────────┐
+                        │    NGINX (Port 80/443)   │
+                        │   Reverse Proxy          │
+                        │   Load Balancer          │
+                        │   SSL Termination        │
+                        └──────────────┬───────────┘
+                                       │
+                    ┌──────────────────┴──────────────────┐
+                    │                                     │
+                    ▼                                     ▼
+        ┌───────────────────────┐          ┌──────────────────────┐
+        │   NEXT.JS APP         │          │     pgAdmin          │
+        │   (Port 3000)         │          │     (Port 5050)      │
+        ├───────────────────────┤          └──────────────────────┘
+        │ • Frontend (React)    │
+        │ • Backend (API Routes)│
+        │ • Server Components   │
+        │ • NextAuth            │
+        └───────────┬───────────┘
+                    │
+                    │ Prisma ORM
+                    │
+                    ▼
+        ┌───────────────────────┐
+        │   PostgreSQL          │
+        │   (Port 5432)         │
+        ├───────────────────────┤
+        │ • Database            │
+        │ • Persistent Volume   │
+        │ • Auto Backup         │
+        └───────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+CONTAINERS:
+
+┌─────────────┬──────────────┬───────────────┬─────────────────────────────┐
+│  Container  │     Port     │    Imagem     │       Descrição             │
+├─────────────┼──────────────┼───────────────┼─────────────────────────────┤
+│ gigios_app  │ 3000         │ node:20-alpine│ Aplicação Next.js fullstack │
+├─────────────┼──────────────┼───────────────┼─────────────────────────────┤
+│gigios_postgres│ 5432       │postgres:16-al │ Banco de dados PostgreSQL   │
+├─────────────┼──────────────┼───────────────┼─────────────────────────────┤
+│gigios_pgadmin│ 5050 -> 80  │dpage/pgadmin4 │ Interface web PostgreSQL    │
+├─────────────┼──────────────┼───────────────┼─────────────────────────────┤
+│gigios_nginx │ 80, 443      │nginx:alpine   │ Reverse proxy + SSL         │
+└─────────────┴──────────────┴───────────────┴─────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+
+VOLUMES (Persistência de Dados):
+
+┌────────────────────┬──────────────────────────────────────────────────┐
+│      Volume        │                  Descrição                       │
+├────────────────────┼──────────────────────────────────────────────────┤
+│ postgres_data      │ Dados do PostgreSQL (banco de dados)            │
+├────────────────────┼──────────────────────────────────────────────────┤
+│ pgadmin_data       │ Configurações e preferências do pgAdmin         │
+├────────────────────┼──────────────────────────────────────────────────┤
+│ nginx_logs         │ Logs de acesso e erros do Nginx                 │
+└────────────────────┴──────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+
+NETWORK:
+
+┌────────────────────┬──────────────────────────────────────────────────┐
+│    gigios_network  │  Rede bridge interna para comunicação entre     │
+│                    │  containers (isolada do host)                    │
+└────────────────────┴──────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+
+FLUXO DE REQUISIÇÃO:
+
+  1. Cliente (Browser)
+     │
+     ▼
+  2. Nginx (Port 80/443) - Recebe requisição
+     │
+     ├─► Rotas /pgadmin/* → pgAdmin
+     │
+     └─► Todas outras rotas → Next.js App
+         │
+         ├─► Rotas API (/api/*) → API Routes do Next.js
+         │   │
+         │   └─► Prisma → PostgreSQL (queries)
+         │
+         └─► Rotas Página (/*) → Server/Client Components
+             │
+             └─► Prisma → PostgreSQL (data fetching)
+
+═══════════════════════════════════════════════════════════════════════════
+
+TECNOLOGIAS:
+
+┌─────────────────┬────────────────────────────────────────────────────┐
+│   Categoria     │              Stack                                 │
+├─────────────────┼────────────────────────────────────────────────────┤
+│ Frontend        │ Next.js 14, React, TypeScript, Tailwind CSS       │
+├─────────────────┼────────────────────────────────────────────────────┤
+│ Backend         │ Next.js API Routes, NextAuth.js                   │
+├─────────────────┼────────────────────────────────────────────────────┤
+│ Database        │ PostgreSQL 16                                      │
+├─────────────────┼────────────────────────────────────────────────────┤
+│ ORM             │ Prisma                                             │
+├─────────────────┼────────────────────────────────────────────────────┤
+│ Authentication  │ NextAuth.js (Google OAuth)                        │
+├─────────────────┼────────────────────────────────────────────────────┤
+│ Proxy           │ Nginx                                              │
+├─────────────────┼────────────────────────────────────────────────────┤
+│ Containerização │ Docker, Docker Compose                            │
+├─────────────────┼────────────────────────────────────────────────────┤
+│ UI Components   │ Shadcn/ui, Radix UI                               │
+├─────────────────┼────────────────────────────────────────────────────┤
+│ Animações       │ Framer Motion, GSAP                               │
+└─────────────────┴────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+
+SEGURANÇA:
+
+✓ Senhas em variáveis de ambiente (.env)
+✓ Containers isolados em rede privada
+✓ Nginx com headers de segurança
+✓ SSL/TLS suportado
+✓ Rate limiting configurado
+✓ Volumes com permissões restritas
+✓ NextAuth com secret keys
+✓ PostgreSQL com usuário não-root
+
+═══════════════════════════════════════════════════════════════════════════
+
+ESCALABILIDADE:
+
+► Horizontal: Adicionar múltiplas instâncias do app container
+► Vertical: Aumentar recursos (CPU/RAM) dos containers
+► Database: Read replicas do PostgreSQL
+► Cache: Adicionar Redis para sessões/cache
+► Load Balancer: Nginx já configurado para múltiplas instâncias
+
+═══════════════════════════════════════════════════════════════════════════

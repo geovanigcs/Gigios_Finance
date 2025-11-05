@@ -16,16 +16,30 @@ Neste projeto, utilizei princípios de design centrado no usuário, focando em:
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Prisma**: ORM para gerenciar o banco de dados.
-- **Neondb**: Solução de banco de dados em nuvem.
-- **Migration**: Para gerenciar alterações no banco de dados.
-- **PostgreSQL**: Sistema de gerenciamento de banco de dados relacional.
-- **Framer Motion**: Biblioteca para animações em React.
-- **GSAP**: Biblioteca para animações de alta performance.
-- **Shadcn**: Biblioteca para componentes de UI.
-- **TypeScript**: Para garantir um desenvolvimento robusto e seguro.
-- **JavaScript**: Linguagem de programação principal.
-- **Tailwind CSS**: Framework CSS para estilização rápida e responsiva.
+### Frontend
+- **Next.js 14**: Framework React com Server Components
+- **TypeScript**: Desenvolvimento type-safe
+- **Tailwind CSS**: Estilização utilitária
+- **Shadcn/ui**: Componentes de UI acessíveis
+- **Framer Motion**: Animações fluidas
+- **GSAP**: Animações de alta performance
+- **Radix UI**: Primitivos de UI headless
+
+### Backend
+- **Next.js API Routes**: Endpoints serverless
+- **NextAuth.js**: Autenticação (Google OAuth)
+- **Prisma**: ORM moderno para TypeScript
+
+### Database & Infraestrutura
+- **PostgreSQL 16**: Banco de dados relacional
+- **Docker**: Containerização
+- **Nginx**: Reverse proxy e load balancer
+- **pgAdmin**: Interface de gerenciamento de banco
+
+### DevOps
+- **Docker Compose**: Orquestração de containers
+- **Multi-stage builds**: Otimização de imagens
+- **Volume persistence**: Persistência de dados
 
 ## 📦 Funcionalidades
 
@@ -38,27 +52,96 @@ Neste projeto, utilizei princípios de design centrado no usuário, focando em:
 
 
 
-## ⚙️ Como Executar o Projeto
+## 🐳 Docker - Execução Simplificada
+
+### Início Rápido (Recomendado)
+
+```bash
+# 1. Clone o repositório
+git clone https://github.com/geovanigcs/Gigios_Finance.git
+cd Gigios_Finance
+
+# 2. Execute o setup
+chmod +x docker-setup.sh
+./docker-setup.sh
+
+# 3. Configure Google OAuth no arquivo .env
+# GOOGLE_CLIENT_ID=seu-client-id
+# GOOGLE_CLIENT_SECRET=seu-client-secret
+
+# 4. Inicie a aplicação
+docker-compose up -d
+```
+
+**Pronto! 🚀** Acesse:
+- Aplicação: http://localhost:3000
+- pgAdmin: http://localhost:5050
+
+### Comandos Úteis
+
+```bash
+# Com Makefile (mais fácil)
+make help          # Ver todos os comandos
+make up            # Iniciar
+make down          # Parar
+make logs          # Ver logs
+make shell         # Acessar container
+
+# Ou com Docker Compose
+docker-compose up -d              # Iniciar
+docker-compose down               # Parar
+docker-compose logs -f            # Ver logs
+docker-compose exec app sh        # Shell do container
+```
+
+📚 **Documentação Completa**: Veja [DOCKER.md](./DOCKER.md) ou [QUICK-START.md](./QUICK-START.md)
+
+---
+
+## 💻 Execução Local (Sem Docker)
+
+<details>
+<summary>Clique para expandir instruções sem Docker</summary>
+
+### Pré-requisitos
+- Node.js 18+
+- PostgreSQL 14+
+- npm ou yarn
+
+### Passos
+
 1. Clone o repositório:
 ```bash
 git clone https://github.com/geovanigcs/Gigios_Finance.git 
+cd Gigios_Finance
 ```
-2. Navegue até o diretório do projeto: 
-  ```bash
-cd gigios_finance
-```
-3. Instale as dependências:
+
+2. Instale as dependências:
 ```bash
- npm install
+npm install
 ```
-4. Inicie o servidor de desenvolvimento:
-```bash 
+
+3. Configure as variáveis de ambiente:
+```bash
+cp .env.example .env
+# Edite .env com suas configurações
+```
+
+4. Configure o banco de dados:
+```bash
+npx prisma migrate deploy
+npx prisma generate
+npm run db:seed
+```
+
+5. Inicie o servidor:
+```bash
 npm run dev
 ```
-5. Acesse o projeto em seu navegador:
-```bash 
-[http://localhost:3000](http://localhost:3000)
-```
+
+6. Acesse: http://localhost:3000
+
+</details>
 ## 🤝 Contribuição
 
 Contribuições são bem-vindas! Se você deseja contribuir, siga estas etapas:

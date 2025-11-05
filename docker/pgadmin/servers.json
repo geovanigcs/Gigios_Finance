@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Gigios Finance PostgreSQL",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "postgres",
+      "Username": "gigios",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpassfile"
+    }
+  }
+}
