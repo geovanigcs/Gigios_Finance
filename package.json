@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate",
     "db:seed": "node -r ts-node/register prisma/seed.ts"
   },
   "dependencies": {
@@ -63,10 +64,10 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "@prisma/client": "^6.19.0"
   },
   "devDependencies": {
-    "@prisma/client": "^6.19.0",
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",

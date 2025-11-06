@@ -57,19 +57,13 @@ Neste projeto, utilizei princípios de design centrado no usuário, focando em:
 ### Início Rápido (Recomendado)
 
 ```bash
-# 1. Clone o repositório
 git clone https://github.com/geovanigcs/Gigios_Finance.git
 cd Gigios_Finance
 
-# 2. Execute o setup
 chmod +x docker-setup.sh
 ./docker-setup.sh
 
-# 3. Configure Google OAuth no arquivo .env
-# GOOGLE_CLIENT_ID=seu-client-id
-# GOOGLE_CLIENT_SECRET=seu-client-secret
 
-# 4. Inicie a aplicação
 docker-compose up -d
 ```
 
@@ -80,18 +74,15 @@ docker-compose up -d
 ### Comandos Úteis
 
 ```bash
-# Com Makefile (mais fácil)
 make help          # Ver todos os comandos
 make up            # Iniciar
 make down          # Parar
 make logs          # Ver logs
 make shell         # Acessar container
 
-# Ou com Docker Compose
 docker-compose up -d              # Iniciar
 docker-compose down               # Parar
 docker-compose logs -f            # Ver logs
-docker-compose exec app sh        # Shell do container
 ```
 
 📚 **Documentação Completa**: Veja [DOCKER.md](./DOCKER.md) ou [QUICK-START.md](./QUICK-START.md)
@@ -124,7 +115,6 @@ npm install
 3. Configure as variáveis de ambiente:
 ```bash
 cp .env.example .env
-# Edite .env com suas configurações
 ```
 
 4. Configure o banco de dados:
