@@ -7,6 +7,7 @@ import { Leaf } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
+import { toast } from "sonner"
 
 export default function OnboardingPage() {
   const { data: session, status } = useSession()
@@ -15,9 +16,7 @@ export default function OnboardingPage() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    age: "",
     phone: "",
-    address: "",
   })
   const [errors, setErrors] = useState({
     firstName: "",
@@ -27,8 +26,11 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/")
-    } else if (status === "authenticated" && session?.user?.onboardingCompleted) {
-      router.push("/dashboard")
+    } else if (status === "authenticated") {
+      // Se j\u00e1 completou onboarding ou se registrou com todos os dados, vai para dashboard
+      if (session?.user?.onboardingCompleted) {
+        router.push("/dashboard")
+      }
     }
   }, [status, session, router])
 
@@ -76,18 +78,25 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
-          age: formData.age ? parseInt(formData.age) : null,
           phone: formData.phone || null,
-          address: formData.address || null,
         }),
       })
 
-      if (response.ok) {
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Erro ao salvar dados")
+      }
+
+      toast.success("Perfil completado com sucesso!")
+      
+      // Aguardar um pouco antes de redirecionar para garantir que a sessão seja atualizada
+      setTimeout(() => {
         router.push("/dashboard")
         router.refresh()
-      }
+      }, 500)
     } catch (error) {
       console.error("Erro ao salvar dados:", error)
+      toast.error(error instanceof Error ? error.message : "Erro ao salvar dados")
     } finally {
       setIsLoading(false)
     }
@@ -153,26 +162,8 @@ export default function OnboardingPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="age" className="text-white">
-                Idade
-              </Label>
-              <Input
-                id="age"
-                name="age"
-                type="number"
-                value={formData.age}
-                onChange={handleChange}
-                className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
-                placeholder="Digite sua idade"
-                min="1"
-                max="150"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="phone" className="text-white">
-                Telefone
+                Telefone (opcional)
               </Label>
               <Input
                 id="phone"
@@ -182,22 +173,6 @@ export default function OnboardingPage() {
                 onChange={handleChange}
                 className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
                 placeholder="(00) 00000-0000"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address" className="text-white">
-                Endereço
-              </Label>
-              <Input
-                id="address"
-                name="address"
-                type="text"
-                value={formData.address}
-                onChange={handleChange}
-                className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
-                placeholder="Rua, número, cidade"
                 disabled={isLoading}
               />
             </div>

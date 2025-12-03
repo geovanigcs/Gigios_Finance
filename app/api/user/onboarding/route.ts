@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { firstName, lastName, age, phone, address } = body
+    const { firstName, lastName, phone } = body
 
     if (!firstName || !lastName) {
       return NextResponse.json(
@@ -26,9 +26,7 @@ export async function POST(req: Request) {
       data: {
         firstName,
         lastName,
-        age,
-        phone,
-        address,
+        phone: phone || null,
         onboardingCompleted: true,
         name: `${firstName} ${lastName}`,
       },

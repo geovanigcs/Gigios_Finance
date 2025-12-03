@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -10,255 +10,315 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, X } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertTriangle } from "lucide-react"
+import { TRANSACTION_CATEGORIES, getCategoriesByType, type TransactionCategory } from "@/lib/transaction-categories"
+import { motion, AnimatePresence } from "framer-motion"
+import { toast } from "sonner"
+import gsap from "gsap"
 
 interface AddTransactionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
-export function AddTransactionDialog({ open, onOpenChange }: AddTransactionDialogProps) {
+export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTransactionDialogProps) {
   const [date, setDate] = useState<Date>(new Date())
-  const [formData, setFormData] = useState({
-    title: "",
-    amount: "",
-    type: "",
-    method: "",
-    category: "",
-    investmentType: "",
-  })
+  const [selectedType, setSelectedType] = useState<"income" | "expense" | "investment" | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<TransactionCategory | null>(null)
+  const [amount, setAmount] = useState("")
+  const [method, setMethod] = useState("")
   const [loading, setLoading] = useState(false)
-  const [showConfirmation, setShowConfirmation] = useState(false)
+  const categoriesRef = useRef<HTMLDivElement>(null)
+  
+  useEffect(() => {
+    if (open && categoriesRef.current) {
+      const categories = categoriesRef.current.querySelectorAll('.category-card')
+      gsap.fromTo(
+        categories,
+        { opacity: 0, y: 20, scale: 0.9 },
+        { opacity: 1, y: 0, scale: 1, stagger: 0.05, duration: 0.3, ease: "back.out(1.7)" }
+      )
+    }
+  }, [open, selectedType])
 
-  const handleSave = async () => {
-    if (formData.title && formData.amount && formData.type) {
-      setShowConfirmation(true)
+  const handleTypeSelect = (type: "income" | "expense" | "investment") => {
+    setSelectedType(type)
+    setSelectedCategory(null)
+  }
+
+  const handleCategorySelect = (category: TransactionCategory) => {
+    setSelectedCategory(category)
+    
+    // Animação de seleção
+    const element = document.querySelector(`[data-category-id="${category.id}"]`)
+    if (element) {
+      gsap.to(element, { scale: 1.1, duration: 0.15, yoyo: true, repeat: 1 })
     }
   }
 
-  const confirmSave = async () => {
+  const handleSave = async () => {
+    if (!selectedCategory || !amount) {
+      toast.error("Preencha todos os campos obrigatórios")
+      return
+    }
+
     try {
       setLoading(true)
-      // Simular delay da API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Aqui você implementaria a chamada real para sua API
-      console.log("Salvando transação:", {
-        ...formData,
-        date,
-        amount: Number.parseFloat(formData.amount),
+      
+      const response = await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryId: selectedCategory.id,
+          amount: parseFloat(amount),
+          method: method || "pix",
+          date: date.toISOString(),
+        })
       })
 
-      setShowConfirmation(false)
+      if (!response.ok) {
+        throw new Error("Erro ao adicionar transação")
+      }
+
+      toast.success(`${selectedCategory.emoji} Transação adicionada com sucesso!`)
       onOpenChange(false)
+      onSuccess?.()
+      
       // Reset form
-      setFormData({
-        title: "",
-        amount: "",
-        type: "",
-        method: "",
-        category: "",
-        investmentType: "",
-      })
+      setSelectedType(null)
+      setSelectedCategory(null)
+      setAmount("")
+      setMethod("")
+      setDate(new Date())
     } catch (error) {
-      console.error("Erro ao salvar transação:", error)
+      toast.error("Erro ao adicionar transação")
+      console.error(error)
     } finally {
       setLoading(false)
     }
   }
 
-  const isInvestment = formData.type === "investment"
+  const filteredCategories = selectedType ? getCategoriesByType(selectedType) : []
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px] bg-gray-900 border-gray-800 text-white">
-          <DialogHeader>
-            <DialogTitle>Adicionar Transação</DialogTitle>
-            <DialogDescription className="text-gray-400">Insira as informações abaixo</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="title">Título</Label>
-              <Input
-                id="title"
-                placeholder="Título"
-                className="bg-gray-800 border-gray-700"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="amount">Valor</Label>
-              <Input
-                id="amount"
-                placeholder="R$ 0.000,00"
-                className="bg-gray-800 border-gray-700"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="type">Tipo da transação</Label>
-              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                <SelectTrigger className="bg-gray-800 border-gray-700">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="income">Ganho</SelectItem>
-                  <SelectItem value="expense">Gasto</SelectItem>
-                  <SelectItem value="investment">Investimento</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {isInvestment && (
-              <div className="grid gap-2">
-                <Label htmlFor="investmentType">Tipo de investimento</Label>
-                <Select
-                  value={formData.investmentType}
-                  onValueChange={(value) => setFormData({ ...formData, investmentType: value })}
-                >
-                  <SelectTrigger className="bg-gray-800 border-gray-700">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
-                    <SelectItem value="national">Investimento Nacional</SelectItem>
-                    <SelectItem value="international">Investimento Internacional</SelectItem>
-                    <SelectItem value="crypto">Criptomoedas</SelectItem>
-                    <SelectItem value="stocks">Ações</SelectItem>
-                    <SelectItem value="realestate">Imóveis</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="grid gap-2">
-              <Label htmlFor="method">Método de pagamento</Label>
-              <Select value={formData.method} onValueChange={(value) => setFormData({ ...formData, method: value })}>
-                <SelectTrigger className="bg-gray-800 border-gray-700">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="pix">PIX</SelectItem>
-                  <SelectItem value="card">Cartão</SelectItem>
-                  <SelectItem value="boleto">Boleto</SelectItem>
-                  <SelectItem value="cash">Dinheiro</SelectItem>
-                  <SelectItem value="transfer">Transferência Bancária</SelectItem>
-                  <SelectItem value="crypto">Carteira Digital</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {formData.type === "expense" && (
-              <div className="grid gap-2">
-                <Label htmlFor="category">Categoria</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) => setFormData({ ...formData, category: value })}
-                >
-                  <SelectTrigger className="bg-gray-800 border-gray-700">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
-                    <SelectItem value="housing">Moradia</SelectItem>
-                    <SelectItem value="food">Alimentação</SelectItem>
-                    <SelectItem value="transport">Transporte</SelectItem>
-                    <SelectItem value="health">Saúde</SelectItem>
-                    <SelectItem value="leisure">Lazer</SelectItem>
-                    <SelectItem value="education">Educação</SelectItem>
-                    <SelectItem value="utilities">Contas (Água/Luz/Internet)</SelectItem>
-                    <SelectItem value="shopping">Compras</SelectItem>
-                    <SelectItem value="travel">Viagens</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="grid gap-2">
-              <Label>Data</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "justify-start text-left font-normal bg-gray-800 border-gray-700",
-                      !date && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP", { locale: ptBR }) : "Selecionar Data"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={(date) => date && setDate(date)}
-                    initialFocus
-                    className="bg-gray-800"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="bg-gray-800 border-gray-700 hover:bg-gray-700"
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] bg-gray-900 border-gray-800 text-white max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">
+            <motion.span
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
             >
-              Cancelar
-            </Button>
+              Adicionar Transação
+            </motion.span>
+          </DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Selecione o tipo e a categoria da transação
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          {/* Seleção de Tipo */}
+          {!selectedType && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-3"
+            >
+              <Label>Tipo de Transação</Label>
+              <div className="grid grid-cols-3 gap-3">
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col gap-2 bg-gray-800 border-gray-700 hover:bg-green-500/20 hover:border-green-500"
+                  onClick={() => handleTypeSelect("income")}
+                >
+                  <span className="text-2xl">💵</span>
+                  <span className="text-sm">Receita</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col gap-2 bg-gray-800 border-gray-700 hover:bg-red-500/20 hover:border-red-500"
+                  onClick={() => handleTypeSelect("expense")}
+                >
+                  <span className="text-2xl">💸</span>
+                  <span className="text-sm">Despesa</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col gap-2 bg-gray-800 border-gray-700 hover:bg-blue-500/20 hover:border-blue-500"
+                  onClick={() => handleTypeSelect("investment")}
+                >
+                  <span className="text-2xl">📊</span>
+                  <span className="text-sm">Investimento</span>
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Categorias */}
+          {selectedType && !selectedCategory && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <Label>Selecione a Categoria</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedType(null)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  Voltar
+                </Button>
+              </div>
+              <div ref={categoriesRef} className="grid grid-cols-2 gap-3">
+                {filteredCategories.map((category) => (
+                  <motion.button
+                    key={category.id}
+                    data-category-id={category.id}
+                    className="category-card flex items-center gap-3 p-4 rounded-lg bg-gray-800 border border-gray-700 hover:border-blue-500 transition-colors text-left"
+                    onClick={() => handleCategorySelect(category)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <span className="text-3xl">{category.emoji}</span>
+                    <div className="flex-1">
+                      <p className="font-medium">{category.name}</p>
+                      {category.description && (
+                        <p className="text-xs text-gray-400">{category.description}</p>
+                      )}
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Formulário de Detalhes */}
+          <AnimatePresence>
+            {selectedCategory && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-4"
+              >
+                {/* Categoria Selecionada */}
+                <div className="flex items-center justify-between p-4 rounded-lg bg-gray-800 border border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{selectedCategory.emoji}</span>
+                    <div>
+                      <p className="font-medium">{selectedCategory.name}</p>
+                      <p className="text-xs text-gray-400">{selectedCategory.description}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedCategory(null)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Valor */}
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Valor (R$)</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="bg-gray-800 border-gray-700 text-lg"
+                  />
+                </div>
+
+                {/* Método de Pagamento */}
+                <div className="space-y-2">
+                  <Label htmlFor="method">Método de Pagamento</Label>
+                  <select
+                    id="method"
+                    value={method}
+                    onChange={(e) => setMethod(e.target.value)}
+                    className="w-full p-2 rounded-md bg-gray-800 border border-gray-700 text-white"
+                  >
+                    <option value="pix">PIX</option>
+                    <option value="card">Cartão</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="cash">Dinheiro</option>
+                    <option value="transfer">Transferência</option>
+                    <option value="crypto">Carteira Digital</option>
+                  </select>
+                </div>
+
+                {/* Data */}
+                <div className="space-y-2">
+                  <Label>Data</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal bg-gray-800 border-gray-700",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "PPP", { locale: ptBR }) : "Selecionar Data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={(date) => date && setDate(date)}
+                        initialFocus
+                        className="bg-gray-800"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="bg-gray-800 border-gray-700 hover:bg-gray-700"
+            disabled={loading}
+          >
+            Cancelar
+          </Button>
+          {selectedCategory && (
             <Button
               className="bg-blue-600 hover:bg-blue-700"
               onClick={handleSave}
-              disabled={!formData.title || !formData.amount || !formData.type}
+              disabled={loading || !amount}
             >
-              Adicionar
+              {loading ? "Adicionando..." : "Adicionar"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Diálogo de confirmação */}
-      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-        <DialogContent className="sm:max-w-[425px] bg-gray-900 border-gray-800 text-white">
-          <DialogHeader>
-            <DialogTitle>Confirmar Adição</DialogTitle>
-          </DialogHeader>
-          <Alert className="border-blue-500/20 bg-blue-500/10">
-            <AlertTriangle className="h-4 w-4 text-blue-500" />
-            <AlertTitle className="text-blue-500">Confirmação</AlertTitle>
-            <AlertDescription className="text-blue-500/90">
-              Tem certeza que deseja adicionar esta transação?
-            </AlertDescription>
-          </Alert>
-          <DialogFooter className="mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirmation(false)}
-              className="bg-gray-800 border-gray-700 hover:bg-gray-700"
-            >
-              Cancelar
-            </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={confirmSave}>
-              Confirmar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
-

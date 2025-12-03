@@ -6,17 +6,15 @@ WORKDIR /app
 # Instalar dependências do sistema
 RUN apk add --no-cache libc6-compat
 
-# Copiar arquivos de dependências
+# Copiar arquivos de dependências e schema do Prisma
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
 
-# Instalar dependências
+# Instalar dependências (o postinstall já roda prisma generate)
 RUN npm install
 
 # Copiar o restante dos arquivos
 COPY . .
-
-# Gerar Prisma Client
-RUN npx prisma generate
 
 # Expor porta
 EXPOSE 3000
