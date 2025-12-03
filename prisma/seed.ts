@@ -26,8 +26,15 @@ async function main() {
 
   console.log(`Usuário criado: ${user.name}`);
 
+  // Limpar transações existentes do usuário
+  await prisma.transaction.deleteMany({
+    where: { userId: user.id }
+  });
+
   // Data atual para transações recentes
   const currentDate = new Date();
+  const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+  const lastMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
   
   // Arrays de possíveis valores para gerar transações aleatórias
   const expenseCategories = ['housing', 'utilities', 'groceries', 'food', 'transport', 'health', 'entertainment', 'education', 'clothing', 'travel', 'pets', 'gifts', 'personal'];
@@ -58,217 +65,150 @@ async function main() {
   };
   const paymentMethods = ['pix', 'card', 'boleto', 'cash', 'transfer', 'crypto'];
 
-  // Criar transações de exemplo
+  // Criar transações de exemplo do mês atual (com as categorias mencionadas)
   const baseTransactions = [
-    // Receitas fixas mensais
+    // Receitas do mês atual
     {
       title: 'Salário',
-      amount: 4850.75,
+      amount: 5200.00,
       type: 'income',
-      method: 'pix',
+      method: 'transfer',
       category: 'salary',
       date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 5),
       userId: user.id,
     },
     {
-      title: 'Freelance Design',
-      amount: 1200.00,
-      type: 'income',
-      method: 'transfer',
-      category: 'freelance',
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 10),
-      userId: user.id,
-    },
-    {
-      title: 'Reembolso despesas',
-      amount: 320.50,
+      title: 'Freelancing',
+      amount: 1800.00,
       type: 'income',
       method: 'pix',
-      category: 'reimbursement',
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 15),
+      category: 'freelancing',
+      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 12),
       userId: user.id,
     },
     
-    // Despesas fixas mensais
+    // Despesas do mês atual
     {
       title: 'Aluguel',
-      amount: 1350.00,
+      amount: 1500.00,
       type: 'expense',
       method: 'transfer',
-      category: 'housing',
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 5),
-      userId: user.id,
-    },
-    {
-      title: 'Conta de luz',
-      amount: 187.32,
-      type: 'expense',
-      method: 'boleto',
-      category: 'utilities',
+      category: 'rent',
       date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 8),
       userId: user.id,
     },
     {
-      title: 'Internet',
-      amount: 129.90,
+      title: 'Mercado',
+      amount: 650.00,
       type: 'expense',
       method: 'card',
-      category: 'utilities',
+      category: 'market',
       date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 10),
       userId: user.id,
     },
     {
-      title: 'Supermercado',
-      amount: 432.75,
+      title: 'Uber',
+      amount: 120.50,
       type: 'expense',
       method: 'card',
-      category: 'groceries',
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 12),
-      userId: user.id,
-    },
-    {
-      title: 'Restaurante',
-      amount: 98.50,
-      type: 'expense',
-      method: 'card',
-      category: 'food',
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 14),
-      userId: user.id,
-    },
-    {
-      title: 'Combustível',
-      amount: 150.00,
-      type: 'expense',
-      method: 'card',
-      category: 'transport',
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 16),
-      userId: user.id,
-    },
-    {
-      title: 'Academia',
-      amount: 89.90,
-      type: 'expense',
-      method: 'card',
-      category: 'health',
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 5),
-      userId: user.id,
-    },
-    {
-      title: 'Streaming',
-      amount: 55.90,
-      type: 'expense',
-      method: 'card',
-      category: 'entertainment',
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 7),
-      userId: user.id,
-    },
-    
-    // Investimentos fixos mensais
-    {
-      title: 'Tesouro Direto',
-      amount: 500.00,
-      type: 'investment',
-      method: 'transfer',
-      category: 'investment',
-      investmentType: 'national',
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 10),
-      userId: user.id,
-    },
-    {
-      title: 'Ações PETR4',
-      amount: 750.00,
-      type: 'investment',
-      method: 'transfer',
-      category: 'investment',
-      investmentType: 'stocks',
+      category: 'uber',
       date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 15),
       userId: user.id,
     },
+    
+    // Investimentos do mês atual
     {
-      title: 'ETF S&P 500',
+      title: 'Bitcoin',
       amount: 1000.00,
       type: 'investment',
-      method: 'transfer',
-      category: 'investment',
-      investmentType: 'international',
+      method: 'crypto',
+      category: 'bitcoin',
       date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 18),
       userId: user.id,
     },
     {
-      title: 'Bitcoin',
-      amount: 600.00,
+      title: 'CDB',
+      amount: 2000.00,
       type: 'investment',
-      method: 'crypto',
-      category: 'investment',
-      investmentType: 'crypto',
+      method: 'transfer',
+      category: 'cdb',
       date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 20),
       userId: user.id,
     },
+    
+    // ========= TRANSAÇÕES DO MÊS ANTERIOR =========
+    // Receitas do mês anterior
     {
-      title: 'Fundo Imobiliário',
-      amount: 1200.00,
+      title: 'Salário',
+      amount: 5200.00,
+      type: 'income',
+      method: 'transfer',
+      category: 'salary',
+      date: new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 5),
+      userId: user.id,
+    },
+    {
+      title: 'Freelancing',
+      amount: 1500.00,
+      type: 'income',
+      method: 'pix',
+      category: 'freelancing',
+      date: new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 15),
+      userId: user.id,
+    },
+    
+    // Despesas do mês anterior
+    {
+      title: 'Aluguel',
+      amount: 1500.00,
+      type: 'expense',
+      method: 'transfer',
+      category: 'rent',
+      date: new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 8),
+      userId: user.id,
+    },
+    {
+      title: 'Mercado',
+      amount: 580.00,
+      type: 'expense',
+      method: 'card',
+      category: 'market',
+      date: new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 12),
+      userId: user.id,
+    },
+    {
+      title: 'Uber',
+      amount: 95.30,
+      type: 'expense',
+      method: 'card',
+      category: 'uber',
+      date: new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 18),
+      userId: user.id,
+    },
+    
+    // Investimentos do mês anterior
+    {
+      title: 'Bitcoin',
+      amount: 800.00,
+      type: 'investment',
+      method: 'crypto',
+      category: 'bitcoin',
+      date: new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 20),
+      userId: user.id,
+    },
+    {
+      title: 'CDB',
+      amount: 1500.00,
       type: 'investment',
       method: 'transfer',
-      category: 'investment',
-      investmentType: 'realestate',
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 22),
+      category: 'cdb',
+      date: new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 25),
       userId: user.id,
     }
   ];
 
-  // Gerar transações aleatórias adicionais (50 transações)
-  const randomTransactions = [];
-  
-  // Adicionar 20 despesas aleatórias
-  for (let i = 0; i < 20; i++) {
-    const category = expenseCategories[Math.floor(Math.random() * expenseCategories.length)];
-    const titles = expenseTitles[category];
-    const title = titles[Math.floor(Math.random() * titles.length)];
-    
-    randomTransactions.push({
-      title,
-      amount: randomAmount(10, 500),
-      type: 'expense',
-      method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-      category,
-      date: randomDate(),
-      userId: user.id,
-    });
-  }
-  
-  // Adicionar 10 receitas aleatórias
-  for (let i = 0; i < 10; i++) {
-    randomTransactions.push({
-      title: incomeTitles[Math.floor(Math.random() * incomeTitles.length)],
-      amount: randomAmount(100, 2000),
-      type: 'income',
-      method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-      category: 'income',
-      date: randomDate(),
-      userId: user.id,
-    });
-  }
-  
-  // Adicionar 15 investimentos aleatórios
-  for (let i = 0; i < 15; i++) {
-    const investmentType = investmentTypes[Math.floor(Math.random() * investmentTypes.length)];
-    const titles = investmentTitles[investmentType];
-    const title = titles[Math.floor(Math.random() * titles.length)];
-    
-    randomTransactions.push({
-      title,
-      amount: randomAmount(100, 3000),
-      type: 'investment',
-      method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-      category: 'investment',
-      investmentType,
-      date: randomDate(),
-      userId: user.id,
-    });
-  }
-  
-  // Combinar transações base com transações aleatórias
-  const allTransactions = [...baseTransactions, ...randomTransactions];
+  // Usar apenas as transações base (sem transações aleatórias)
+  const allTransactions = baseTransactions;
 
   // Criar todas as transações no banco de dados
   for (const transaction of allTransactions) {

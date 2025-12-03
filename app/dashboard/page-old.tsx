@@ -68,7 +68,7 @@ export default function DashboardPage() {
       )
     }
 
-    if (!loading && chartsRef.current) {
+    if (chartsRef.current) {
       gsap.fromTo(
         chartsRef.current.children,
         { opacity: 0, y: 40 },
@@ -82,25 +82,7 @@ export default function DashboardPage() {
         }
       )
     }
-  }, [loading])
-
-  if (loading) {
-    return (
-      <DashboardShell>
-        <DashboardHeader heading="Dashboard" text="Visualize e gerencie suas finanças." />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-800 rounded animate-pulse" />
-          ))}
-        </div>
-        <div className="grid gap-4 lg:grid-cols-2 mt-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-64 bg-gray-800 rounded animate-pulse" />
-          ))}
-        </div>
-      </DashboardShell>
-    )
-  }
+  }, [])
 
   return (
     <DashboardShell>
@@ -114,23 +96,24 @@ export default function DashboardPage() {
 
       <div ref={cardsRef} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <div className="balance-card">
-          <BalanceCard title="Saldo" amount={stats?.balance || 0} icon="wallet" />
+          <BalanceCard title="Saldo" amount={2700} icon="wallet" />
         </div>
         <div className="balance-card">
-          <BalanceCard title="Investido" amount={stats?.totalInvestment || 0} icon="trending-up" />
+          <BalanceCard title="Investido" amount={3500} icon="trending-up" />
         </div>
         <div className="balance-card">
-          <BalanceCard title="Receita" amount={stats?.totalIncome || 0} icon="arrow-up-right" />
+          <BalanceCard title="Receita" amount={8150} icon="arrow-up-right" />
         </div>
       </div>
 
       <div ref={chartsRef} className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">
-          <ExpensesChart data={stats?.monthlyData || []} />
-          <ExpensesByCategory data={stats?.expensesByCategory || []} />
+          <ExpensesChart />
+          <ExpensesByCategory />
         </div>
-        <RecentTransactions onTransactionChange={fetchStats} />
+        <RecentTransactions />
       </div>
     </DashboardShell>
   )
 }
+

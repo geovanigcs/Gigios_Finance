@@ -24,7 +24,11 @@ interface Transaction {
   createdAt: string
 }
 
-export function RecentTransactions() {
+interface RecentTransactionsProps {
+  onTransactionChange?: () => void
+}
+
+export function RecentTransactions({ onTransactionChange }: RecentTransactionsProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -123,6 +127,7 @@ export function RecentTransactions() {
 
   const handleTransactionAdded = () => {
     fetchTransactions()
+    onTransactionChange?.()
   }
 
   if (loading) {
