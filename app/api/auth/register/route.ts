@@ -67,10 +67,23 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating user:", error)
+    
+    // Log mais detalhado para debug
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Detailed error:", {
+        message: error.message,
+        code: error.code,
+        meta: error.meta
+      })
+    }
+    
     return NextResponse.json(
-      { error: "Erro ao criar usuário" },
+      { 
+        error: "Erro ao criar usuário",
+        details: process.env.NODE_ENV !== "production" ? error.message : undefined
+      },
       { status: 500 }
     )
   }
