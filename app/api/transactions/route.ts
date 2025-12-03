@@ -34,30 +34,25 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { categoryId, amount, method, date } = body
+    const { name, categoryId, type, amount, method, date } = body
 
-    if (!categoryId || !amount || !method || !date) {
+    if (!name || !type || !amount || !method || !date) {
       return NextResponse.json(
         { error: "Dados incompletos" },
         { status: 400 }
       )
     }
 
-    const category = getCategoryById(categoryId)
-    if (!category) {
-      return NextResponse.json(
-        { error: "Categoria inválida" },
-        { status: 400 }
-      )
-    }
-
+    // Se uma categoria foi selecionada, usa ela; senão, usa "other"
+    const finalCategoryId = categoryId || "other"
+    
     const transaction = await prisma.transaction.create({
       data: {
-        title: category.name,
+        title: name,
         amount: parseFloat(amount),
-        type: category.type,
+        type,
         method,
-        category: categoryId,
+        category: finalCategoryId,
         date: new Date(date),
         userId: session.user.id
       }

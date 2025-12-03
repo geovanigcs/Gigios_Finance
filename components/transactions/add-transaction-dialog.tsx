@@ -33,6 +33,7 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
   const [date, setDate] = useState<Date>(new Date())
   const [selectedType, setSelectedType] = useState<"income" | "expense" | "investment" | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<TransactionCategory | null>(null)
+  const [customName, setCustomName] = useState("")
   const [amount, setAmount] = useState("")
   const [method, setMethod] = useState("")
   const [loading, setLoading] = useState(false)
@@ -65,7 +66,7 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
   }
 
   const handleSave = async () => {
-    if (!selectedCategory || !amount) {
+    if (!selectedType || !customName.trim() || !amount) {
       toast.error("Preencha todos os campos obrigatórios")
       return
     }
@@ -77,7 +78,9 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          categoryId: selectedCategory.id,
+          name: customName.trim(),
+          categoryId: selectedCategory?.id || "other",
+          type: selectedType,
           amount: parseFloat(amount),
           method: method || "pix",
           date: date.toISOString(),
@@ -88,13 +91,15 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
         throw new Error("Erro ao adicionar transação")
       }
 
-      toast.success(`${selectedCategory.emoji} Transação adicionada com sucesso!`)
+      const emoji = selectedCategory?.emoji || (selectedType === "income" ? "💵" : selectedType === "investment" ? "📊" : "💸")
+      toast.success(`${emoji} Transação "${customName}" adicionada com sucesso!`)
       onOpenChange(false)
       onSuccess?.()
       
       // Reset form
       setSelectedType(null)
       setSelectedCategory(null)
+      setCustomName("")
       setAmount("")
       setMethod("")
       setDate(new Date())
@@ -165,8 +170,8 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
             </motion.div>
           )}
 
-          {/* Categorias */}
-          {selectedType && !selectedCategory && (
+          {/* Nome da Transação */}
+          {selectedType && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -174,37 +179,70 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
               className="space-y-3"
             >
               <div className="flex items-center justify-between">
-                <Label>Selecione a Categoria</Label>
+                <Label htmlFor="customName">Nome da Transação</Label>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setSelectedType(null)}
+                  onClick={() => {
+                    setSelectedType(null)
+                    setSelectedCategory(null)
+                    setCustomName("")
+                  }}
                   className="text-gray-400 hover:text-white"
                 >
                   Voltar
                 </Button>
               </div>
-              <div ref={categoriesRef} className="grid grid-cols-2 gap-3">
-                {filteredCategories.map((category) => (
-                  <motion.button
-                    key={category.id}
-                    data-category-id={category.id}
-                    className="category-card flex items-center gap-3 p-4 rounded-lg bg-gray-800 border border-gray-700 hover:border-blue-500 transition-colors text-left"
-                    onClick={() => handleCategorySelect(category)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <span className="text-3xl">{category.emoji}</span>
-                    <div className="flex-1">
-                      <p className="font-medium">{category.name}</p>
-                      {category.description && (
-                        <p className="text-xs text-gray-400">{category.description}</p>
+              <Input
+                id="customName"
+                type="text"
+                placeholder="Ex: Salário, Mercado, Netflix, Bitcoin..."
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                className="bg-gray-800 border-gray-700 text-lg"
+                autoFocus
+              />
+            </motion.div>
+          )}
+
+          {/* Categorias Opcionais */}
+          {selectedType && customName.trim() && !selectedCategory && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-3"
+            >
+          {/* Formulário de Detalhes */}
+          <AnimatePresence>
+            {selectedType && customName.trim() && (selectedCategory || customName) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-4"
+              >
+                {/* Informações da Transação */}
+                <div className="flex items-center justify-between p-4 rounded-lg bg-gray-800 border border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{selectedCategory?.emoji || (selectedType === "income" ? "💵" : selectedType === "investment" ? "📊" : "💸")}</span>
+                    <div>
+                      <p className="font-medium">{customName}</p>
+                      {selectedCategory && selectedCategory.id !== "other" && (
+                        <p className="text-xs text-gray-400">{selectedCategory.name}</p>
                       )}
                     </div>
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
+                  </div>
+                  {selectedCategory && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedCategory(null)}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>iv>
           )}
 
           {/* Formulário de Detalhes */}
@@ -295,10 +333,6 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
                   </Popover>
                 </div>
               </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
         <DialogFooter>
           <Button
             variant="outline"
@@ -308,12 +342,16 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
           >
             Cancelar
           </Button>
-          {selectedCategory && (
+          {selectedType && customName.trim() && amount && (
             <Button
               className="bg-blue-600 hover:bg-blue-700"
               onClick={handleSave}
-              disabled={loading || !amount}
+              disabled={loading}
             >
+              {loading ? "Adicionando..." : "Adicionar"}
+            </Button>
+          )}
+        </DialogFooter>
               {loading ? "Adicionando..." : "Adicionar"}
             </Button>
           )}
