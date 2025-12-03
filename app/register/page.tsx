@@ -58,9 +58,13 @@ export default function RegisterPage() {
         payload.phone = data.phone
       }
       
-      console.log("Enviando requisição para backend NestJS", payload)
+      console.log("=== INICIANDO REGISTRO ===")
+      console.log("Payload:", payload)
       
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+      console.log("API_URL:", API_URL)
+      console.log("URL completa:", `${API_URL}/auth/register`)
+      
       const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: {
@@ -69,10 +73,20 @@ export default function RegisterPage() {
         body: JSON.stringify(payload)
       })
 
-      console.log("Resposta recebida:", response.status)
+      console.log("Status da resposta:", response.status)
+      console.log("Headers da resposta:", Object.fromEntries(response.headers.entries()))
       
-      const result = await response.json()
-      console.log("Resultado:", result)
+      const responseText = await response.text()
+      console.log("Resposta raw:", responseText)
+      
+      let result
+      try {
+        result = JSON.parse(responseText)
+        console.log("Resultado parseado:", result)
+      } catch (e) {
+        console.error("Erro ao parsear JSON:", e)
+        throw new Error("Resposta inválida do servidor")
+      }
 
       if (!response.ok) {
         // Mensagens de erro específicas

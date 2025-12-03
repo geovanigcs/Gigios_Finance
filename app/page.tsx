@@ -41,27 +41,43 @@ export default function Home() {
   }, [router])
 
   const onSubmit = async (data: LoginFormData) => {
-    console.log("Tentando fazer login...", { email: data.email })
+    console.log("=== INICIANDO LOGIN ===")
+    console.log("Email:", data.email)
     setIsLoading(true)
     
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
       console.log("API_URL:", API_URL)
+      console.log("URL completa:", `${API_URL}/auth/login`)
+      
+      const payload = {
+        email: data.email,
+        password: data.password
+      }
+      console.log("Payload:", { email: payload.email, password: "***" })
       
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password
-        })
+        body: JSON.stringify(payload)
       })
 
-      console.log("Resposta recebida:", response.status)
-      const result = await response.json()
-      console.log("Resultado:", result)
+      console.log("Status da resposta:", response.status)
+      console.log("Headers da resposta:", Object.fromEntries(response.headers.entries()))
+      
+      const responseText = await response.text()
+      console.log("Resposta raw:", responseText)
+      
+      let result
+      try {
+        result = JSON.parse(responseText)
+        console.log("Resultado parseado:", result)
+      } catch (e) {
+        console.error("Erro ao parsear JSON:", e)
+        throw new Error("Resposta inválida do servidor")
+      }
 
       if (!response.ok) {
         // Mensagens específicas de erro
