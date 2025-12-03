@@ -5,8 +5,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Leaf } from "lucide-react"
-import Image from "next/image"
-import { signIn, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -23,7 +21,6 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>
 
 export default function Home() {
-  const { data: session, status } = useSession()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -36,20 +33,21 @@ export default function Home() {
   })
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    // Verificar se já está logado
+    const token = localStorage.getItem('auth_token')
+    if (token) {
       router.push("/dashboard")
     }
-  }, [status, session, router])
-
-  const handleGoogleSignIn = async () => {
-    await signIn("google", { callbackUrl: "/dashboard" })
-  }
+  }, [router])
 
   const onSubmit = async (data: LoginFormData) => {
+    console.log("Tentando fazer login...", { email: data.email })
     setIsLoading(true)
     
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+      console.log("API_URL:", API_URL)
+      
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
@@ -61,35 +59,64 @@ export default function Home() {
         })
       })
 
+      console.log("Resposta recebida:", response.status)
       const result = await response.json()
+      console.log("Resultado:", result)
 
       if (!response.ok) {
-        toast.error(result.message || "Email ou senha incorretos")
+        // Mensagens específicas de erro
+        if (response.status === 401) {
+          toast.error("🔒 Email ou senha incorretos", {
+            description: "Verifique suas credenciais e tente novamente."
+          })
+        } else if (result.message) {
+          toast.error("❌ Erro ao fazer login", {
+            description: result.message
+          })
+        } else {
+          toast.error("❌ Erro ao fazer login", {
+            description: "Ocorreu um erro inesperado."
+          })
+        }
         return
       }
 
-      // Salvar token
+      // Salvar token e dados do usuário
+      console.log("Salvando dados no localStorage...")
       if (result.token) {
         localStorage.setItem('auth_token', result.token)
+        console.log("Token salvo:", result.token.substring(0, 20) + "...")
+      }
+      
+      if (result.user) {
         localStorage.setItem('user', JSON.stringify(result.user))
+        console.log("Usuário salvo:", result.user)
       }
 
-      toast.success("Login realizado com sucesso!")
-      router.push("/dashboard")
+      // Sucesso
+      toast.success("✅ Login realizado com sucesso!", {
+        description: `Bem-vindo de volta, ${result.user?.firstName || 'usuário'}!`
+      })
+      
+      console.log("Redirecionando para dashboard em 1s...")
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 1000)
     } catch (error) {
-      toast.error("Erro ao fazer login")
-      console.error(error)
+      console.error("Erro ao fazer login:", error)
+      
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        toast.error("🔌 Erro de conexão", {
+          description: "Não foi possível conectar ao servidor."
+        })
+      } else {
+        toast.error("❌ Erro ao fazer login", {
+          description: "Ocorreu um erro inesperado."
+        })
+      }
     } finally {
       setIsLoading(false)
     }
-  }
-
-  if (status === "loading") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-      </div>
-    )
   }
 
   return (
@@ -146,21 +173,7 @@ export default function Home() {
             </Button>
           </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full bg-gray-800" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-black px-2 text-gray-400">Ou continue com</span>
-            </div>
-          </div>
-
-          <Button onClick={handleGoogleSignIn} className="w-full bg-gray-800 hover:bg-gray-700">
-            <Image src="/google-logo.svg" alt="Google" width={20} height={20} className="mr-2" />
-            Entrar com Google
-          </Button>
-
-          <div className="text-center text-sm text-gray-400">
+          <div className="text-center text-sm text-gray-400 mt-6">
             Não tem uma conta?{" "}
             <Link href="/register" className="text-blue-500 hover:underline">
               Criar conta
