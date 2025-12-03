@@ -36,10 +36,26 @@ export function RecentTransactions({ onTransactionChange }: RecentTransactionsPr
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch("/api/transactions")
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${API_URL}/transactions`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
       if (response.ok) {
         const data = await response.json()
         setTransactions(data.slice(0, 5))
+      } else if (response.status === 401) {
+        localStorage.clear()
+        window.location.href = '/'
       }
     } catch (error) {
       console.error("Erro ao buscar transações:", error)

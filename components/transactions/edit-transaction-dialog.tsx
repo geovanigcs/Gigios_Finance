@@ -56,12 +56,21 @@ export function EditTransactionDialog({
     setLoading(true)
 
     try {
-      const response = await fetch("/api/transactions", {
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        toast.error('Você precisa estar logado')
+        return
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${API_URL}/transactions/${transaction.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({
-          id: transaction.id,
-          categoryId,
+          category: categoryId,
           amount: parseFloat(amount),
           method,
           date
@@ -72,9 +81,12 @@ export function EditTransactionDialog({
         toast.success("Transação atualizada com sucesso!")
         onOpenChange(false)
         onSuccess?.()
+      } else if (response.status === 401) {
+        localStorage.clear()
+        window.location.href = '/'
       } else {
         const error = await response.json()
-        toast.error(error.error || "Erro ao atualizar transação")
+        toast.error(error.message || "Erro ao atualizar transação")
       }
     } catch (error) {
       console.error("Erro ao atualizar transação:", error)

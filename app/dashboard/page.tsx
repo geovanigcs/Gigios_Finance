@@ -35,10 +35,27 @@ export default function DashboardPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch("/api/dashboard/stats")
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        console.error('Token não encontrado')
+        setLoading(false)
+        return
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${API_URL}/transactions/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
       if (response.ok) {
         const data = await response.json()
         setStats(data)
+      } else if (response.status === 401) {
+        localStorage.clear()
+        window.location.href = '/'
       }
     } catch (error) {
       console.error("Erro ao buscar estatísticas:", error)

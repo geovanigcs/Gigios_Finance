@@ -74,12 +74,22 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
     try {
       setLoading(true)
       
-      const response = await fetch("/api/transactions", {
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        toast.error('Você precisa estar logado')
+        return
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${API_URL}/transactions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({
-          name: customName.trim(),
-          categoryId: selectedCategory?.id || "other",
+          title: customName.trim(),
+          category: selectedCategory?.id || "other",
           type: selectedType,
           amount: parseFloat(amount),
           method: method || "pix",
@@ -88,6 +98,11 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
       })
 
       if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.clear()
+          window.location.href = '/'
+          return
+        }
         throw new Error("Erro ao adicionar transação")
       }
 

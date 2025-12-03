@@ -37,10 +37,26 @@ export default function TransactionsPage() {
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch("/api/transactions")
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${API_URL}/transactions`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
       if (response.ok) {
         const data = await response.json()
         setTransactions(data)
+      } else if (response.status === 401) {
+        localStorage.clear()
+        window.location.href = '/'
       }
     } catch (error) {
       console.error("Erro ao buscar transações:", error)
@@ -94,13 +110,27 @@ export default function TransactionsPage() {
     if (!deletingId) return
 
     try {
-      const response = await fetch(`/api/transactions/${deletingId}`, {
-        method: "DELETE"
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        toast.error('Você precisa estar logado')
+        return
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${API_URL}/transactions/${deletingId}`, {
+        method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       })
 
       if (response.ok) {
         toast.success("Transação excluída com sucesso!")
         fetchTransactions()
+      } else if (response.status === 401) {
+        localStorage.clear()
+        window.location.href = '/'
       } else {
         toast.error("Erro ao excluir transação")
       }
