@@ -1,84 +1,69 @@
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { AuthOptions } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import CredentialsProvider from "next-auth/providers/credentials"
-import { prisma } from "@/lib/prisma"
-import bcrypt from "bcryptjs"
+// Funções de autenticação usando backend NestJS
 
-export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(prisma),
-  providers: [
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? [
-          GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          }),
-        ]
-      : []),
-    CredentialsProvider({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email e senha são obrigatórios")
-        }
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        })
+export interface User {
+  id: string
+  email: string
+  name: string
+  username: string
+}
 
-        if (!user || !user.password) {
-          throw new Error("Credenciais inválidas")
-        }
+export interface AuthResponse {
+  user: User
+  token: string
+}
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
+// Pegar token do localStorage
+export function getToken(): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem('auth_token')
+}
 
-        if (!isPasswordValid) {
-          throw new Error("Credenciais inválidas")
-        }
+// Pegar usuário do localStorage
+export function getUser(): User | null {
+  if (typeof window === 'undefined') return null
+  const userStr = localStorage.getItem('user')
+  return userStr ? JSON.parse(userStr) : null
+}
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          onboardingCompleted: user.onboardingCompleted
-        }
-      }
-    })
-  ],
-  callbacks: {
-    async session({ session, user, token }) {
-      if (session.user) {
-        if (user) {
-          session.user.id = user.id
-          session.user.onboardingCompleted = user.onboardingCompleted
-        } else if (token) {
-          session.user.id = token.sub!
-          session.user.onboardingCompleted = token.onboardingCompleted as boolean
-        }
-      }
-      return session
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.onboardingCompleted = user.onboardingCompleted
-      }
-      return token
-    }
-  },
-  pages: {
-    signIn: "/",
-    newUser: "/onboarding",
-  },
-  session: {
-    strategy: "jwt",
-  },
+// Verificar se está autenticado
+export function isAuthenticated(): boolean {
+  return !!getToken()
+}
+
+// Fazer logout
+export function logout() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem('auth_token')
+  localStorage.removeItem('user')
+  window.location.href = '/'
+}
+
+// Fazer requisição autenticada
+export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
+  const token = getToken()
+  
+  if (!token) {
+    throw new Error('Não autenticado')
+  }
+
+  const headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  }
+
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers,
+  })
+
+  if (response.status === 401) {
+    // Token expirado ou inválido
+    logout()
+    throw new Error('Sessão expirada')
+  }
+
+  return response
 }

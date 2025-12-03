@@ -12,22 +12,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { LogOut, User } from "lucide-react"
-import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { getUser, logout } from "@/lib/auth"
 
 export function UserNav() {
-  const { data: session } = useSession()
+  const [user, setUser] = useState<any>(null)
 
-  if (!session?.user) {
+  useEffect(() => {
+    const currentUser = getUser()
+    setUser(currentUser)
+  }, [])
+
+  if (!user) {
     return null
   }
 
-  const userInitials = session.user.name
-    ? session.user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+  const userInitials = user.name
+    ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "U"
 
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" })
+  const handleSignOut = () => {
+    logout()
   }
 
   return (
@@ -35,7 +41,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={session.user.image || ""} alt={session.user.name || "Usuário"} />
+            <AvatarImage src="" alt={user.name || "Usuário"} />
             <AvatarFallback className="bg-blue-600 text-white">{userInitials}</AvatarFallback>
           </Avatar>
         </Button>
@@ -43,8 +49,8 @@ export function UserNav() {
       <DropdownMenuContent className="w-56 bg-gray-900 border-gray-800" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none text-white">{session.user.name || "Usuário"}</p>
-            <p className="text-xs leading-none text-gray-400">{session.user.email}</p>
+            <p className="text-sm font-medium leading-none text-white">{user.name || "Usuário"}</p>
+            <p className="text-xs leading-none text-gray-400">{user.email}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-gray-800" />

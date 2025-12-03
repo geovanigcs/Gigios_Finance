@@ -2,36 +2,32 @@
 
 import type React from "react"
 import { SiteHeader } from "@/components/site-header"
-import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { isAuthenticated } from "@/lib/auth"
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { data: session, status } = useSession()
   const router = useRouter()
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (!isAuthenticated()) {
       router.push("/")
-    } else if (status === "authenticated" && session?.user && !session.user.onboardingCompleted) {
-      router.push("/onboarding")
+    } else {
+      setLoading(false)
     }
-  }, [status, session, router])
+  }, [router])
 
-  if (status === "loading") {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
       </div>
     )
-  }
-
-  if (status === "unauthenticated" || !session?.user?.onboardingCompleted) {
-    return null
   }
 
   return (
