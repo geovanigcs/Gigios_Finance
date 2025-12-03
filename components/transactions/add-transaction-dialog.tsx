@@ -88,8 +88,8 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          title: customName.trim(),
-          category: selectedCategory?.id || "other",
+          name: customName.trim(),
+          categoryId: selectedCategory?.id || "other",
           type: selectedType,
           amount: parseFloat(amount),
           method: method || "pix",
