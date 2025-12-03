@@ -50,13 +50,14 @@ export default function RegisterPage() {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        phone: data.phone || null,
+        phone: data.phone || undefined,
         password: data.password
       }
       
-      console.log("Enviando requisição para /api/auth/register")
+      console.log("Enviando requisição para backend NestJS")
       
-      const response = await fetch("/api/auth/register", {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -70,24 +71,18 @@ export default function RegisterPage() {
       console.log("Resultado:", result)
 
       if (!response.ok) {
-        throw new Error(result.error || result.details || "Erro ao criar conta")
+        throw new Error(result.message || result.error || "Erro ao criar conta")
+      }
+
+      // Salvar token
+      if (result.token) {
+        localStorage.setItem('auth_token', result.token)
       }
 
       toast.success("Conta criada com sucesso!")
-
-      // Fazer login automático após registro
-      const signInResult = await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false
-      })
-
-      if (signInResult?.error) {
-        toast.error("Conta criada, mas erro ao fazer login. Tente fazer login manualmente.")
-        router.push("/")
-      } else {
-        router.push("/dashboard")
-      }
+      
+      // Redirecionar para dashboard
+      router.push("/dashboard")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao criar conta")
     } finally {

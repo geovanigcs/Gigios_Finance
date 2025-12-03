@@ -49,20 +49,36 @@ export default function Home() {
     setIsLoading(true)
     
     try {
-      const result = await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password
+        })
       })
 
-      if (result?.error) {
-        toast.error("Email ou senha incorretos")
-      } else {
-        toast.success("Login realizado com sucesso!")
-        router.push("/dashboard")
+      const result = await response.json()
+
+      if (!response.ok) {
+        toast.error(result.message || "Email ou senha incorretos")
+        return
       }
+
+      // Salvar token
+      if (result.token) {
+        localStorage.setItem('auth_token', result.token)
+        localStorage.setItem('user', JSON.stringify(result.user))
+      }
+
+      toast.success("Login realizado com sucesso!")
+      router.push("/dashboard")
     } catch (error) {
       toast.error("Erro ao fazer login")
+      console.error(error)
     } finally {
       setIsLoading(false)
     }
