@@ -18,7 +18,7 @@ const registerSchema = z.object({
   firstName: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   lastName: z.string().min(2, "Sobrenome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
-  phone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos").optional(),
+  phone: z.string().optional().or(z.literal("")),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   confirmPassword: z.string()
 }).refine((data) => data.password === data.confirmPassword, {
@@ -41,28 +41,36 @@ export default function RegisterPage() {
   })
 
   const onSubmit = async (data: RegisterFormData) => {
+    console.log("Iniciando criação de conta...", { ...data, password: "***", confirmPassword: "***" })
     setIsLoading(true)
 
     try {
+      const payload = {
+        username: data.username,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone || null,
+        password: data.password
+      }
+      
+      console.log("Enviando requisição para /api/auth/register")
+      
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          username: data.username,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          phone: data.phone || null,
-          password: data.password
-        })
+        body: JSON.stringify(payload)
       })
 
+      console.log("Resposta recebida:", response.status)
+      
       const result = await response.json()
+      console.log("Resultado:", result)
 
       if (!response.ok) {
-        throw new Error(result.error || "Erro ao criar conta")
+        throw new Error(result.error || result.details || "Erro ao criar conta")
       }
 
       toast.success("Conta criada com sucesso!")
