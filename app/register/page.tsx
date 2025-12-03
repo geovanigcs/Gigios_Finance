@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Leaf } from "lucide-react"
-import { signIn } from "next-auth/react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Leaf, HelpCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -71,20 +71,59 @@ export default function RegisterPage() {
       console.log("Resultado:", result)
 
       if (!response.ok) {
-        throw new Error(result.message || result.error || "Erro ao criar conta")
+        // Mensagens de erro específicas
+        if (result.message) {
+          if (result.message.includes("email") || result.message.includes("Email")) {
+            toast.error("📧 Este email já está cadastrado", {
+              description: "Tente fazer login ou use outro email."
+            })
+          } else if (result.message.includes("username") || result.message.includes("usuário")) {
+            toast.error("👤 Este nome de usuário já está em uso", {
+              description: "Por favor, escolha outro nome de usuário."
+            })
+          } else {
+            toast.error("❌ Erro ao criar conta", {
+              description: result.message
+            })
+          }
+        } else {
+          toast.error("❌ Erro ao criar conta", {
+            description: "Ocorreu um erro inesperado. Tente novamente."
+          })
+        }
+        return
       }
 
-      // Salvar token
+      // Salvar token e dados do usuário
       if (result.token) {
         localStorage.setItem('auth_token', result.token)
       }
-
-      toast.success("Conta criada com sucesso!")
       
-      // Redirecionar para dashboard
-      router.push("/dashboard")
+      if (result.user) {
+        localStorage.setItem('user', JSON.stringify(result.user))
+      }
+
+      // Sucesso com animação
+      toast.success("🎉 Conta criada com sucesso!", {
+        description: `Bem-vindo, ${data.firstName}! Redirecionando...`
+      })
+      
+      // Aguardar um pouco para o usuário ver a mensagem
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 1500)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao criar conta")
+      console.error("Erro ao criar conta:", error)
+      
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        toast.error("🔌 Erro de conexão", {
+          description: "Não foi possível conectar ao servidor. Verifique sua conexão."
+        })
+      } else {
+        toast.error("❌ Erro ao criar conta", {
+          description: error instanceof Error ? error.message : "Ocorreu um erro inesperado."
+        })
+      }
     } finally {
       setIsLoading(false)
     }
@@ -106,113 +145,155 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="username">Nome de usuário</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="seunome_usuario"
-                {...register("username")}
-                className="bg-gray-900 border-gray-800"
-              />
-              {errors.username && (
-                <p className="text-sm text-red-500">{errors.username.message}</p>
-              )}
-            </div>
+          <TooltipProvider>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="username">Nome de usuário</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Nome único que será usado para identificá-lo no sistema</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="seunome_usuario"
+                  {...register("username")}
+                  className="bg-gray-900 border-gray-800"
+                />
+                {errors.username && (
+                  <p className="text-sm text-red-500">{errors.username.message}</p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="firstName">Nome</Label>
-              <Input
-                id="firstName"
-                type="text"
-                placeholder="Seu nome"
-                {...register("firstName")}
-                className="bg-gray-900 border-gray-800"
-              />
-              {errors.firstName && (
-                <p className="text-sm text-red-500">{errors.firstName.message}</p>
-              )}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="firstName">Nome</Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="Seu nome"
+                  {...register("firstName")}
+                  className="bg-gray-900 border-gray-800"
+                />
+                {errors.firstName && (
+                  <p className="text-sm text-red-500">{errors.firstName.message}</p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Sobrenome</Label>
-              <Input
-                id="lastName"
-                type="text"
-                placeholder="Seu sobrenome"
-                {...register("lastName")}
-                className="bg-gray-900 border-gray-800"
-              />
-              {errors.lastName && (
-                <p className="text-sm text-red-500">{errors.lastName.message}</p>
-              )}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Sobrenome</Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Seu sobrenome"
+                  {...register("lastName")}
+                  className="bg-gray-900 border-gray-800"
+                />
+                {errors.lastName && (
+                  <p className="text-sm text-red-500">{errors.lastName.message}</p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                {...register("email")}
-                className="bg-gray-900 border-gray-800"
-              />
-              {errors.email && (
-                <p className="text-sm text-red-500">{errors.email.message}</p>
-              )}
-            </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Será usado para fazer login e recuperar senha</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  {...register("email")}
+                  className="bg-gray-900 border-gray-800"
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone (opcional)</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="(00) 00000-0000"
-                {...register("phone")}
-                className="bg-gray-900 border-gray-800"
-              />
-              {errors.phone && (
-                <p className="text-sm text-red-500">{errors.phone.message}</p>
-              )}
-            </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="phone">Telefone (opcional)</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Pode ser usado para recuperação de conta</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="(00) 00000-0000"
+                  {...register("phone")}
+                  className="bg-gray-900 border-gray-800"
+                />
+                {errors.phone && (
+                  <p className="text-sm text-red-500">{errors.phone.message}</p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                {...register("password")}
-                className="bg-gray-900 border-gray-800"
-              />
-              {errors.password && (
-                <p className="text-sm text-red-500">{errors.password.message}</p>
-              )}
-            </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Mínimo de 6 caracteres. Use letras e números</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  {...register("password")}
+                  className="bg-gray-900 border-gray-800"
+                />
+                {errors.password && (
+                  <p className="text-sm text-red-500">{errors.password.message}</p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar senha</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                {...register("confirmPassword")}
-                className="bg-gray-900 border-gray-800"
-              />
-              {errors.confirmPassword && (
-                <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
-              )}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmar senha</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  {...register("confirmPassword")}
+                  className="bg-gray-900 border-gray-800"
+                />
+                {errors.confirmPassword && (
+                  <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+                )}
+              </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              disabled={isLoading}
-            >
-              {isLoading ? "Criando conta..." : "Criar conta"}
-            </Button>
-          </form>
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={isLoading}
+              >
+                {isLoading ? "Criando conta..." : "Criar conta"}
+              </Button>
+            </form>
+          </TooltipProvider>
 
           <div className="text-center text-sm text-gray-400">
             Já tem uma conta?{" "}
